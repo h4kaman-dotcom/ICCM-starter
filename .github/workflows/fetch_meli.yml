@@ -1,0 +1,39 @@
+name: Coletor Mercado Livre -> Supabase
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"    # roda a cada 3 horas (UTC). Ajuste se quiser.
+  workflow_dispatch:         # botão "Run workflow" manual
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r infra/requirements.txt
+
+      - name: Criar .env do job com seus secrets
+        run: |
+          cat > .env << 'EOF'
+          SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}
+          MELI_CLIENT_ID=${{ secrets.MELI_CLIENT_ID }}
+          MELI_CLIENT_SECRET=${{ secrets.MELI_CLIENT_SECRET }}
+          MELI_ACCESS_TOKEN=${{ secrets.MELI_ACCESS_TOKEN }}
+          MELI_REFRESH_TOKEN=${{ secrets.MELI_REFRESH_TOKEN }}
+          QUERIES_MELI=${{ secrets.QUERIES_MELI }}
+          EOF
+          echo "Gerado .env"
+
+      - name: Rodar coletor
+        working-directory: collectors
+        run: python run_fetch.py
